@@ -4,7 +4,7 @@ set -e
 EVMGOLF_DIR=${EVMGOLF_DIR-"$HOME/.evmgolf"}
 EVMGOLF_BIN_DIR="$EVMGOLF_DIR/bin"
 
-if [ ! -d $EVMGOLF_DIR/evmgolfrc ]; then 
+if [ ! -f $EVMGOLF_DIR/evmgolfrc ]; then
   echo -e "#!/usr/bin/env bash" > $EVMGOLF_DIR/evmgolfrc
 fi
 source $EVMGOLF_DIR/evmgolfrc
