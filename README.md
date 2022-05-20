@@ -11,7 +11,9 @@
 
 ### Install
 
-curl https://raw.githubusercontent.com/evmgolf/evmgolf-cli/master/install.sh | bash
+```bash
+curl https://raw.githubusercontent.com/evmgolf/evmgolf-cli/master/install.sh | bash 
+```
 
 ## Guide 
 
@@ -21,15 +23,25 @@ Requirements: evmgolf
 
 Start a local node in a separate shell, noting the address and private key outputted for the next step:
 
-`anvil`
+```bash
+anvil 
+```
 
 ### Setup
 
 Create the initial config:
 
-`evmgolf`
+```bash
+evmgolf 
+```
 
-Copy chain configuration to the appropriate dir (eg. `~/.evmgolf/31337/evmgolfrc`):
+Set the RPC and run evmgolf again to initialize the chain-specific directory:
+```bash
+echo "export ETH_RPC_URL='...' >> ~/.evmgolf/evmgolfrc"
+evmgolf
+```
+
+Copy chain configuration to the generated dir (eg. `~/.evmgolf/31337/evmgolfrc`):
 
 ```bash
 #!/usr/bin/env bash
@@ -48,26 +60,29 @@ Clone the base repository:
 
 Initialize the base contracts:
 
-`cd evmgolf`
-
-`evmgolf challenges init`
-
-`evmgolf programs init`
-
-`evmgolf trophies init`
+```bash
+cd evmgolf
+evmgolf challenges init
+evmgolf programs init
+evmgolf trophies init 
+```
 
 ### (Users) Fetch 
 
 Download the base contract addresses:
 
-`evmgolf dl https://raw.githubusercontent.com/evmgolf/evmgolf-data/master`
+```bash
+evmgolf dl https://raw.githubusercontent.com/evmgolf/evmgolf-data/master
+```
 
 
 ### Create a challenge 
 
 Deploy the challenge contract:
 
-`evmgolf challenge create TrueChallenge`
+```bash
+evmgolf challenge create TrueChallenge
+```
 
 ```json
 {
@@ -79,11 +94,15 @@ Deploy the challenge contract:
 
 Request the challenge to be added, adding a description as the second arg:
 
-`evmgolf challenge request $CHALLENGE 'Create a program that returns true.'`
+```bash
+evmgolf challenge request $CHALLENGE 'Create a program that returns true.'
+```
 
 View the current state of the challenge:
 
-`evmgolf challenge view $CHALLENGE`
+```bash
+evmgolf challenge view $CHALLENGE
+```
 
 ```json 
 {
@@ -103,32 +122,44 @@ View the current state of the challenge:
 
 Approve the challenge: 
 
-`evmgolf challenge approve $CHALLENGE '✅'`
+```bash
+evmgolf challenge approve $CHALLENGE '✅'
+```
 
 Or reject the challenge:
 
-`evmgolf challenge reject $CHALLENGE '❌ challenge contains an exploit'`
+```bash
+evmgolf challenge reject $CHALLENGE '❌ challenge contains an exploit'
+```
 
 
 ### Create a Program 
 
 Build the program:
 
-`forge build`
+```bash
+forge build 
+```
 
 Write the creationCode to Programs noting the created address (last item in topics):
 
-`evmgolf program write out/Program.sol/Program.json`
+```bash
+evmgolf program write out/Program.sol/Program.json 
+```
 
 ### Submit a Program 
 
 Submit a solution to the challenge, noting the trophy id (last item in the Transfer topic):
 
-`evmgolf trophy submit $CHALLENGE $PROGRAM`
+```bash
+evmgolf trophy submit $CHALLENGE $PROGRAM
+```
 
 ### View a Trophy
 
-`evmgolf trophy view 0`
+```bash
+evmgolf trophy view 0
+```
 
 ```json 
 {
