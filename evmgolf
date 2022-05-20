@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -e
+
+EVMGOLF_DIR=${EVMGOLF_DIR-"$HOME/.evmgolf"}
+EVMGOLF_BIN_DIR="$EVMGOLF_DIR/bin"
+
+if [ ! -d $EVMGOLF_DIR/evmgolfrc ]; then 
+  echo -e "#!/usr/bin/env bash" > $EVMGOLF_DIR/evmgolfrc
+fi
+source $EVMGOLF_DIR/evmgolfrc
+
+CHAIN_ID=$(cast chain-id)
+EVMGOLF_CHAIN_DIR="$EVMGOLF_DIR/$CHAIN_ID"
+if [ -d $EVMGOLF_CHAIN_DIR ]; then 
+  if [ -f $EVMGOLF_CHAIN_DIR/challenges.json ]; then
+    CHALLENGES=$(jq -r .deployedTo $EVMGOLF_CHAIN_DIR/challenges.json)
+  fi
+  if [ -f $EVMGOLF_CHAIN_DIR/programs.json ]; then
+    PROGRAMS=$(jq -r .deployedTo $EVMGOLF_CHAIN_DIR/programs.json)
+  fi
+  if [ -f $EVMGOLF_CHAIN_DIR/trophies.json ]; then
+    TROPHIES=$(jq -r .deployedTo $EVMGOLF_CHAIN_DIR/trophies.json)
+  fi
+else
+  mkdir $EVMGOLF_CHAIN_DIR
+  echo -e '#!/usr/bin/env bash\n' > $EVMGOLF_CHAIN_DIR/evmgolfrc
+fi
+source $EVMGOLF_CHAIN_DIR/evmgolfrc
+
+if [ "$1" = "dl" ]; then 
+  for name in {challenges,programs,trophies}; do 
+    curl -q "$2/$CHAIN_ID/${name}.json" > "$EVMGOLF_CHAIN_DIR/${name}.json"
+  done
+elif [ "$1" = "challenges" ]; then 
+  if [ "$2" = "init" ]; then 
+    forge create --json $AUTH Challenges --constructor-args "Challenges" --constructor-args "CHALLENGES" | tee $EVMGOLF_CHAIN_DIR/challenges.json | jq
+  elif [ "$2" = "addr" ]; then
+    echo $CHALLENGES
+  else
+    echo "evmgolf challenges [init|addr]"
+  fi
+elif [ "$1" = "challenge" ]; then
+  if [ "$2" = "create" ]; then 
+    forge create --json $AUTH ${@:3} | tee $EVMGOLF_CHAIN_DIR/currentChallenge.json | jq
+  elif [ "$2" = "request" ]; then 
+    cast send -j $AUTH $CHALLENGES "requestChallenge(address,bytes)" $3 $(cast --from-utf8 "$4") | jq
+  elif [ "$2" = "approve" ]; then 
+    cast send -j $AUTH $CHALLENGES "reviewChallenge(uint,bool,bytes)" $3 1 $(cast --from-utf8 "$4") | jq
+  elif [ "$2" = "deny" ]; then 
+    cast send -j $AUTH $CHALLENGES "reviewChallenge(uint,bool,bytes)" $3 0 $(cast --from-utf8 "$4") | jq
+  elif [ "$2" = "status" ]; then 
+    if [ $(cast call $CHALLENGES "accepted(uint)" $3) = "0x0000000000000000000000000000000000000000000000000000000000000001" ]; then 
+      echo "accepted"
+    else 
+      echo "pending"
+    fi
+  elif [ "$2" = "view" ]; then 
+    cast --to-ascii $(cast call $CHALLENGES "tokenURI(uint)" $3) | sed -E 's/^(.*)data:application\/json;base64,(.+)$/\2/' | base64 -di | jq
+  else
+    echo "evmgolf challenge [create|request|approve|deny|status|view]"
+  fi
+elif [ "$1" = "programs" ]; then 
+  if [ "$2" = "init" ]; then 
+    forge create --json $AUTH Programs --constructor-args "Programs" --constructor-args "PROGRAMS" | tee $EVMGOLF_CHAIN_DIR/programs.json | jq
+  elif [ "$2" = "addr" ]; then
+    echo $PROGRAMS
+  else
+    echo "evmgolf programs [init|addr]"
+  fi
+elif [ "$1" = "program" ]; then 
+  if [ "$2" = "view" ]; then
+    cast --to-ascii $(cast call $PROGRAMS "tokenURI(uint)" $3) | sed -E 's/^(.*)data:application\/json;base64,(.+)$/\2/' | base64 -di | jq
+  elif [ "$2" = "write" ]; then 
+    cast send -j $AUTH $PROGRAMS "write(bytes)" $(jq -r .bytecode.object $3) | tee $EVMGOLF_CHAIN_DIR/currentProgram.json | jq
+  else
+    echo "evmgolf program [write]"
+  fi
+elif [ "$1" = "trophies" ]; then 
+  if [ "$2" = "init" ]; then
+    forge create --json $AUTH Trophies --constructor-args "Trophies" --constructor-args "TROPHIES" $CHALLENGES | tee $EVMGOLF_CHAIN_DIR/trophies.json | jq
+  elif [ "$2" = "addr" ]; then
+    echo $TROPHIES
+  else
+    echo "evmgolf trophies [init|addr]"
+  fi 
+elif [ "$1" = "trophy" ]; then
+  if [ "$2" = "view" ]; then
+    cast --to-ascii $(cast call $TROPHIES "tokenURI(uint)" $3) | sed -E 's/^(.*)data:application\/json;base64,(.+)$/\2/' | base64 -di | jq
+  elif [ "$2" = "fund" ]; then
+    cast send -j $AUTH $TROPHIES "fund(address)" $3 --value $4 | jq
+  elif [ "$2" = "submit" ]; then
+    cast send -j $AUTH $TROPHIES "submit(address,address)" $3 $4 | tee $EVMGOLF_CHAIN_DIR/currentTrophy.json | jq
+  else
+    echo "evmgolf trophy [view|fund|submit]"
+  fi 
+else
+  echo "evmgolf {dl|challenges|challenge|programs|program|trophies|trophy}"
+fi
