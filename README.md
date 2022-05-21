@@ -6,6 +6,7 @@
 
 - [curl](https://curl.se/download.html)
 - [jq](https://stedolan.github.io/jq/download/)
+- [xclip](https://github.com/astrand/xclip/blob/master/INSTALL)
 - [foundry](https://github.com/foundry-rs/foundry#installation)
 - [ethabi](https://github.com/rust-ethereum/ethabi#installation)
 
@@ -65,6 +66,14 @@ cd evmgolf
 evmgolf challenges init
 evmgolf programs init
 evmgolf trophies init 
+```
+
+Verify each contract by running the `verify` command and pasting the flattened code into [polygonscan](https://polygonscan.com)
+
+```bash
+evmgolf challenges verify
+evmgolf programs verify
+evmgolf trophies verify
 ```
 
 ### (Users) Fetch 

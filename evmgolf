@@ -27,21 +27,29 @@ else
 fi
 source $EVMGOLF_CHAIN_DIR/evmgolfrc
 
+OPTIMIZE="--optimize --optimizer-runs=$OPTIMIZE_RUNS"
+CREATE="forge create --json $AUTH $OPTIMIZE"
+
 if [ "$1" = "dl" ]; then 
   for name in {challenges,programs,trophies}; do 
     curl -q "$2/$CHAIN_ID/${name}.json" > "$EVMGOLF_CHAIN_DIR/${name}.json"
   done
 elif [ "$1" = "challenges" ]; then 
   if [ "$2" = "init" ]; then 
-    forge create --json $AUTH Challenges --constructor-args "Challenges" --constructor-args "CHALLENGES" | tee $EVMGOLF_CHAIN_DIR/challenges.json | jq
+    $CREATE Challenges --constructor-args "Challenges" --constructor-args "CHALLENGES" | tee $EVMGOLF_CHAIN_DIR/challenges.json | jq
+  elif [ "$2" = "verify" ]; then
+    forge flatten src/Challenge.sol | xclip -i
+    echo "Flat source code for src/Challenges.sol copied to clipboard."
   elif [ "$2" = "addr" ]; then
     echo $CHALLENGES
   else
-    echo "evmgolf challenges [init|addr]"
+    echo "evmgolf challenges [init|addr|verify]"
   fi
 elif [ "$1" = "challenge" ]; then
   if [ "$2" = "create" ]; then 
-    forge create --json $AUTH ${@:3} | tee $EVMGOLF_CHAIN_DIR/currentChallenge.json | jq
+    $CREATE ${@:3} | tee $EVMGOLF_CHAIN_DIR/currentChallenge.json | jq
+    forge flatten src/Challenge.sol | xclip -i
+    echo "Flat source code for src/Challenge.sol copied to clipboard."
   elif [ "$2" = "request" ]; then 
     cast send -j $AUTH $CHALLENGES "requestChallenge(address,bytes)" $3 $(cast --from-utf8 "$4") | jq
   elif [ "$2" = "approve" ]; then 
@@ -61,11 +69,14 @@ elif [ "$1" = "challenge" ]; then
   fi
 elif [ "$1" = "programs" ]; then 
   if [ "$2" = "init" ]; then 
-    forge create --json $AUTH Programs --constructor-args "Programs" --constructor-args "PROGRAMS" | tee $EVMGOLF_CHAIN_DIR/programs.json | jq
+    $CREATE Programs --constructor-args "Programs" --constructor-args "PROGRAMS" | tee $EVMGOLF_CHAIN_DIR/programs.json | jq
+  elif [ "$2" = "verify" ]; then
+    forge flatten src/Programs.sol | xclip -i
+    echo "Flat source code for src/Programs.sol copied to clipboard."
   elif [ "$2" = "addr" ]; then
     echo $PROGRAMS
   else
-    echo "evmgolf programs [init|addr]"
+    echo "evmgolf programs [init|addr|verify]"
   fi
 elif [ "$1" = "program" ]; then 
   if [ "$2" = "view" ]; then
@@ -77,11 +88,14 @@ elif [ "$1" = "program" ]; then
   fi
 elif [ "$1" = "trophies" ]; then 
   if [ "$2" = "init" ]; then
-    forge create --json $AUTH Trophies --constructor-args "Trophies" --constructor-args "TROPHIES" $CHALLENGES | tee $EVMGOLF_CHAIN_DIR/trophies.json | jq
+    $CREATE Trophies --constructor-args "Trophies" --constructor-args "TROPHIES" --constructor-args $CHALLENGES --constructor-args $PROGRAMS | tee $EVMGOLF_CHAIN_DIR/trophies.json | jq
+  elif [ "$2" = "verify" ]; then
+    forge flatten src/Trophies.sol | xclip -i
+    echo "Flat source code for src/Trophies.sol copied to clipboard."
   elif [ "$2" = "addr" ]; then
     echo $TROPHIES
   else
-    echo "evmgolf trophies [init|addr]"
+    echo "evmgolf trophies [init|addr|verify]"
   fi 
 elif [ "$1" = "trophy" ]; then
   if [ "$2" = "view" ]; then
